@@ -6,6 +6,9 @@ namespace Tetrahedrons
     // ReSharper disable once InconsistentNaming
     public struct MVec3d
     {
+        public static readonly MVec3d Zero = new MVec3d(0, 0, 0, 0, 0, 0, 0, 0);
+        public static readonly MVec3d One = new MVec3d(1, 1, 1, 1, 1, 1, 1, 1);
+
         public static readonly MVec3d Unit = new MVec3d(1, 0, 0, 0, 0, 0, 0, 0);
         public static readonly MVec3d Unit1 = new MVec3d(0, 1, 0, 0, 0, 0, 0, 0);
         public static readonly MVec3d Unit2 = new MVec3d(0, 0, 1, 0, 0, 0, 0, 0);
