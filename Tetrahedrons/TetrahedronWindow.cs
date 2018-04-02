@@ -38,7 +38,7 @@ namespace Tetrahedrons
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
-                pts[i] = (p.Points[i] + m).VectorPart;
+                pts[i] = (Vector3d) (p.Points[i] + m);
             return new Polygon(pts, p.Color);
         }
 
@@ -46,7 +46,7 @@ namespace Tetrahedrons
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
-                pts[i] = (p.Points[i] - m).VectorPart;
+                pts[i] = (Vector3d) (p.Points[i] - m);
             return new Polygon(pts, p.Color);
         }
 
@@ -54,7 +54,7 @@ namespace Tetrahedrons
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
-                pts[i] = (p.Points[i] * m).VectorPart;
+                pts[i] = (Vector3d) (p.Points[i] * m);
             return new Polygon(pts, p.Color);
         }
 
@@ -62,7 +62,7 @@ namespace Tetrahedrons
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
-                pts[i] = (p.Points[i] ^ m).VectorPart;
+                pts[i] = (Vector3d) (p.Points[i] ^ m);
             return new Polygon(pts, p.Color);
         }
 
@@ -70,7 +70,7 @@ namespace Tetrahedrons
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
-                pts[i] = (p.Points[i] & m).VectorPart;
+                pts[i] = (Vector3d) (p.Points[i] & m);
             return new Polygon(pts, p.Color);
         }
     }
@@ -78,21 +78,12 @@ namespace Tetrahedrons
     public class Tetrahedron
     {
         public readonly Vector3d[] Points;
-        public Color Color;
-        public Color WireColor;
+        public Color FillColor = Color.DodgerBlue;
+        public Color SurfaceColor = Color.GhostWhite;
+        public Color WireColor = Color.Maroon;
 
-        public Tetrahedron(Vector3d p1, Vector3d p2, Vector3d p3, Vector3d p4) : this(p1, p2, p3, p4, Color.GhostWhite)
+        public Tetrahedron(Vector3d p1, Vector3d p2, Vector3d p3, Vector3d p4)
         {
-        }
-
-        public Tetrahedron(Vector3d p1, Vector3d p2, Vector3d p3, Vector3d p4, Color color) : this(p1, p2, p3, p4, color, Color.Maroon)
-        {
-        }
-
-        public Tetrahedron(Vector3d p1, Vector3d p2, Vector3d p3, Vector3d p4, Color color, Color wireColor)
-        {
-            Color = color;
-            WireColor = wireColor;
             Points = new[] {p1, p2, p3, p4};
         }
 
@@ -115,7 +106,7 @@ namespace Tetrahedrons
             else
             {
                 GL.Begin(PrimitiveType.Triangles);
-                GL.Color3(Color);
+                GL.Color3(SurfaceColor);
 
                 for (var i = 0; i < 4; i++)
                 for (var j = i + 1; j < 4; j++)
@@ -130,12 +121,12 @@ namespace Tetrahedrons
             }
         }
 
-        public Polygon Intersection(MVec3d blade, Vector3d pivot)
+        public Polygon Intersection(MVec3d blade, MVec3d pivot)
         {
             var pts = new Vector3d[4];
             for (var i = 0; i < 4; i++)
             {
-                pts[i] = Points[i] - pivot;
+                pts[i] = (Vector3d) (Points[i] - pivot);
             }
 
             var a = blade * MVec3d.Unit123;
@@ -155,18 +146,18 @@ namespace Tetrahedrons
 
                     var t = ((blade ^ pts[i]) * ~(blade ^ (pts[j] - pts[i]))).E;
                     var point = pts[i] + t * (pts[j] - pts[i]);
-                    vecs.Add(point + pivot);
+                    vecs.Add((Vector3d) (point + pivot));
                 }
             }
 
-            return new Polygon(vecs.ToArray());
+            return new Polygon(vecs.ToArray()) {Color = FillColor};
         }
     }
 
     public class TetrahedronWindow : GameWindow
     {
-        private Matrix4 _proj3d;
-        private Matrix4 _proj2d;
+        private Matrix4 _proj3D;
+        private Matrix4 _proj2D;
         private Matrix4 _view;
 
         private double _t;
@@ -208,14 +199,14 @@ namespace Tetrahedrons
             if (_div)
             {
                 GL.MatrixMode(MatrixMode.Projection);
-                GL.LoadMatrix(ref _proj2d);
+                GL.LoadMatrix(ref _proj2D);
 
                 _polyg.Draw();
             }
             else
             {
                 GL.MatrixMode(MatrixMode.Projection);
-                GL.LoadMatrix(ref _proj3d);
+                GL.LoadMatrix(ref _proj3D);
                 GL.MatrixMode(MatrixMode.Modelview);
                 GL.LoadMatrix(ref _view);
 
@@ -227,12 +218,12 @@ namespace Tetrahedrons
 
                 GL.Begin(PrimitiveType.Points);
                 GL.Color3(Color.DarkBlue);
-                GL.Vertex3(_pivot.VectorPart);
+                GL.Vertex3((Vector3d) _pivot);
                 GL.End();
 
                 GL.Begin(PrimitiveType.Lines);
-                GL.Vertex3(_pivot.VectorPart);
-                GL.Vertex3((_pivot + (_b2 ^ _b1) * MVec3d.Unit123 * .5).VectorPart);
+                GL.Vertex3((Vector3d) _pivot);
+                GL.Vertex3((Vector3d) (_pivot + (_b2 ^ _b1) * MVec3d.Unit123 * .5));
                 GL.End();
 
                 GL.Enable(EnableCap.DepthTest);
@@ -248,8 +239,8 @@ namespace Tetrahedrons
         {
             base.OnUpdateFrame(e);
 
-            _proj3d = Matrix4.CreateOrthographic(6, 6f * Height / Width, -2, 2);
-            _proj2d = Matrix4.CreateOrthographic(4, 4f * Height / Width, -1, 1);
+            _proj3D = Matrix4.CreateOrthographic(6, 6f * Height / Width, -2, 2);
+            _proj2D = Matrix4.CreateOrthographic(4, 4f * Height / Width, -1, 1);
 
             _t += e.Time;
 
@@ -301,7 +292,7 @@ namespace Tetrahedrons
 //            var blade = pln;
 //            var pivot = Vector3d.Zero;
 
-            _polyg = _tetra.Intersection(_b1 ^ _b2, _pivot.VectorPart);
+            _polyg = _tetra.Intersection(_b1 ^ _b2, _pivot);
 
             if (_div)
             {
