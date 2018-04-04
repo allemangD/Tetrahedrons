@@ -61,6 +61,9 @@ namespace Tetrahedrons
          }
       }
 
+      public Vector4d V4 => new Vector4d(X, Y, Z, W);
+      public Vector3d V3 => new Vector3d(X, Y, Z);
+
       #region Swizzle
 
       public double Yx
