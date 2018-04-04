@@ -34,7 +34,7 @@ namespace Tetrahedrons
             GL.End();
         }
 
-        public static Polygon operator +(Polygon p, MVec3d m)
+        public static Polygon operator +(Polygon p, MVec3D m)
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
@@ -42,7 +42,7 @@ namespace Tetrahedrons
             return new Polygon(pts, p.Color);
         }
 
-        public static Polygon operator -(Polygon p, MVec3d m)
+        public static Polygon operator -(Polygon p, MVec3D m)
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
@@ -50,7 +50,7 @@ namespace Tetrahedrons
             return new Polygon(pts, p.Color);
         }
 
-        public static Polygon operator *(Polygon p, MVec3d m)
+        public static Polygon operator *(Polygon p, MVec3D m)
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
@@ -58,7 +58,7 @@ namespace Tetrahedrons
             return new Polygon(pts, p.Color);
         }
 
-        public static Polygon operator ^(Polygon p, MVec3d m)
+        public static Polygon operator ^(Polygon p, MVec3D m)
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
@@ -66,7 +66,7 @@ namespace Tetrahedrons
             return new Polygon(pts, p.Color);
         }
 
-        public static Polygon operator &(Polygon p, MVec3d m)
+        public static Polygon operator &(Polygon p, MVec3D m)
         {
             var pts = new Vector3d[p.Points.Length];
             for (var i = 0; i < p.Points.Length; i++)
@@ -130,7 +130,7 @@ namespace Tetrahedrons
             }
         }
 
-        public Polygon Intersection(MVec3d blade, Vector3d pivot)
+        public Polygon Intersection(MVec3D blade, Vector3d pivot)
         {
             var pts = new Vector3d[4];
             for (var i = 0; i < 4; i++)
@@ -138,7 +138,7 @@ namespace Tetrahedrons
                 pts[i] = Points[i] - pivot;
             }
 
-            var a = blade * MVec3d.Unit123;
+            var a = blade * MVec3D.Unit123;
             var sides = new double[4];
             for (var i = 0; i < 4; i++)
             {
@@ -175,9 +175,9 @@ namespace Tetrahedrons
         private Tetrahedron _tetra;
         private Polygon _polyg;
 
-        private MVec3d _b1 = MVec3d.Unit1;
-        private MVec3d _b2 = MVec3d.Unit3;
-        private MVec3d _pivot = MVec3d.Zero;
+        private MVec3D _b1 = MVec3D.Unit1;
+        private MVec3D _b2 = MVec3D.Unit3;
+        private MVec3D _pivot = MVec3D.Zero;
 
         private Polygon _square = new Polygon(new[] {new Vector3d(-1, -1, 0), new Vector3d(-1, 1, 0), new Vector3d(1, -1, 0), new Vector3d(1, 1, 0),}, Color.Red);
 
@@ -232,7 +232,7 @@ namespace Tetrahedrons
 
                 GL.Begin(PrimitiveType.Lines);
                 GL.Vertex3(_pivot.VectorPart);
-                GL.Vertex3((_pivot + (_b2 ^ _b1) * MVec3d.Unit123 * .5).VectorPart);
+                GL.Vertex3((_pivot + (_b2 ^ _b1) * MVec3D.Unit123 * .5).VectorPart);
                 GL.End();
 
                 GL.Enable(EnableCap.DepthTest);
@@ -255,26 +255,26 @@ namespace Tetrahedrons
 
             if (Keyboard[Key.Left])
             {
-                var rot = MVec3d.Complex(-e.Time, MVec3d.Unit12);
+                var rot = MVec3D.Complex(-e.Time, MVec3D.Unit12);
                 _b1 = rot * _b1 * ~rot; // todo make blade classes
                 _b2 = rot * _b2 * ~rot;
             }
 
             if (Keyboard[Key.Right])
             {
-                var rot = MVec3d.Complex(e.Time, MVec3d.Unit12);
+                var rot = MVec3D.Complex(e.Time, MVec3D.Unit12);
                 _b1 = rot * _b1 * ~rot;
                 _b2 = rot * _b2 * ~rot;
             }
 
             if (Keyboard[Key.Up])
             {
-                _pivot -= (_b1 ^ _b2) * MVec3d.Unit123 * e.Time;
+                _pivot -= (_b1 ^ _b2) * MVec3D.Unit123 * e.Time;
             }
 
             if (Keyboard[Key.Down])
             {
-                _pivot += (_b1 ^ _b2) * MVec3d.Unit123 * e.Time;
+                _pivot += (_b1 ^ _b2) * MVec3D.Unit123 * e.Time;
             }
 
             if (_pause)
@@ -310,7 +310,7 @@ namespace Tetrahedrons
 
                 for (var i = 0; i < _polyg.Points.Length; i++)
                 {
-                    MVec3d p = _polyg.Points[i];
+                    MVec3D p = _polyg.Points[i];
                     var x = ((p & _b1) * ~_b1) & _b1;
                     var y = ((p ^ _b1) * ~_b1) & ((_b2 ^ _b1) * ~_b1);
                     _polyg.Points[i] = new Vector3d(x.E - px.E, y.E - py.E, 0);
@@ -331,9 +331,9 @@ namespace Tetrahedrons
                     _div = !_div;
                     break;
                 case Key.R:
-                    _b1 = MVec3d.Unit1;
-                    _b2 = MVec3d.Unit3;
-                    _pivot = MVec3d.Zero;
+                    _b1 = MVec3D.Unit1;
+                    _b2 = MVec3D.Unit3;
+                    _pivot = MVec3D.Zero;
                     break;
             }
         }
