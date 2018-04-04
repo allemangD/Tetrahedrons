@@ -45,7 +45,9 @@
     <Compile Include="MVec4D.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Simplex.cs" />
     <Compile Include="TetrahedronWindow.cs" />
+    <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="OpenTK.dll.config" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Dynamic;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using OpenTK;
@@ -41,6 +42,8 @@ namespace Tetrahedrons
                              Xyw * Xyw + Xzw * Xzw + Yzw * Yzw + Xyzw * Xyzw;
 
       public double Norm => Math.Sqrt(Norm2);
+
+      public MVec4D Normalized => this * (1 / Norm);
 
       public MVec4D Grade(int k)
       {
@@ -929,11 +932,7 @@ namespace Tetrahedrons
          );
       }
 
-      public static MVec4D? Div(MVec4D m, MVec4D n) => Mul(m, n.Inv);
-
       public static MVec4D Div(MVec4D m, double c) => Mul(m, 1 / c);
-
-      public static MVec4D? Div(double c, MVec4D n) => Mul(c, n.Inv);
 
       public static MVec4D Inner(MVec4D m, MVec4D n)
       {
@@ -1030,10 +1029,6 @@ namespace Tetrahedrons
       public static MVec4D operator *(double c, MVec4D n) => Mul(c, n);
       public static MVec4D operator *(MVec4D m, double c) => Mul(m, c);
 
-      public static MVec4D? operator /(MVec4D m, MVec4D n) => Div(m, n);
-      public static MVec4D? operator /(double c, MVec4D n) => Div(c, n);
-      public static MVec4D operator /(MVec4D m, double c) => Div(m, c);
-
       public static MVec4D operator &(MVec4D m, MVec4D n) => Inner(m, n);
       public static MVec4D operator &(MVec4D m, double c) => Inner(m, c);
       public static MVec4D operator &(double c, MVec4D n) => Inner(c, n);
@@ -1053,10 +1048,6 @@ namespace Tetrahedrons
       public static MVec4D? operator *(MVec4D? m, MVec4D? n) => Mul(m, n);
       public static MVec4D? operator *(double? c, MVec4D? n) => Mul(c, n);
       public static MVec4D? operator *(MVec4D? m, double? c) => Mul(m, c);
-
-      public static MVec4D? operator /(MVec4D? m, MVec4D? n) => Div(m, n);
-      public static MVec4D? operator /(double? c, MVec4D? n) => Div(c, n);
-      public static MVec4D? operator /(MVec4D? m, double? c) => Div(m, c);
 
       public static MVec4D? operator &(MVec4D? m, MVec4D? n) => Inner(m, n);
       public static MVec4D? operator &(MVec4D? m, double? c) => Inner(m, c);
