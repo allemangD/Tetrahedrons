@@ -23,11 +23,12 @@ namespace Tetrahedrons
       private MVec4D _a = MVec4D.UnitX;
       private MVec4D _b = MVec4D.UnitY;
 
-      private Simplex _pent;
-      private Simplex _intr;
+      private Simplex[] _simplexes;
+      private Simplex[] _intersections;
 
       private double _t;
       private bool _pause;
+      private bool _wire;
 
       protected override void OnLoad(EventArgs e)
       {
@@ -38,12 +39,27 @@ namespace Tetrahedrons
 
          _view = Matrix4.LookAt(Vector3.Zero, -new Vector3(.86f, .5f, 1), Vector3.UnitZ);
 
-         _pent = new Simplex( // not-quite-regular pentatope
-            new Vector4d(1, -1, -1, -1),
-            new Vector4d(-1, 1, -1, -1),
-            new Vector4d(-1, -1, 1, -1),
-            new Vector4d(-1, -1, -1, 1),
-            new Vector4d(1, 1, 1, 1));
+         const int n = 5;
+         _simplexes = new Simplex[n * n * n * n];
+         _intersections = new Simplex[_simplexes.Length];
+
+         var off = (new Vector4d(n - 1, n - 1, n - 1, n - 1)) / 2;
+         int i = 0;
+         for (var x = 0; x < n; x++)
+         for (var y = 0; y < n; y++)
+         for (var z = 0; z < n; z++)
+         for (var w = 0; w < n; w++)
+         {
+            var d = new Vector4d(x, y, z, w);
+            _simplexes[i] = new Simplex( // not-quite-regular pentatope
+               new Vector4d(+.5, -.5, -.5, -.5) + d - off,
+               new Vector4d(-.5, +.5, -.5, -.5) + d - off,
+               new Vector4d(-.5, -.5, +.5, -.5) + d - off,
+               new Vector4d(-.5, -.5, -.5, +.5) + d - off,
+               new Vector4d(+.5, +.5, +.5, +.5) + d - off);
+            _intersections[i] = new Simplex();
+            i++;
+         }
       }
 
       protected override void OnRenderFrame(FrameEventArgs e)
@@ -67,25 +83,31 @@ namespace Tetrahedrons
 
          GL.Begin(PrimitiveType.Lines);
          GL.Color3(0f, 0, 0);
-         foreach (var f in _intr.Edjes)
-            Util.Vertex3(_intr.Verts[f]);
+         foreach (var intr in _intersections)
+         foreach (var f in intr.Edjes)
+            Util.Vertex3(intr.Verts[f]);
          GL.End();
 
          GL.Begin(PrimitiveType.Triangles);
-         foreach (var f in _intr.Faces)
+         foreach (var intr in _intersections)
+         foreach (var f in intr.Faces)
          {
-            Util.Color3(_intr.Verts[f]);
-            Util.Vertex3(_intr.Verts[f]);
+            Util.Color3(intr.Verts[f]);
+            Util.Vertex3(intr.Verts[f]);
          }
 
          GL.End();
          GL.Disable(EnableCap.DepthTest);
 
-         GL.Begin(PrimitiveType.Lines);
-         foreach (var f in _pent.Edjes)
-            Util.Vertex4(_pent.Verts[f]);
+         if (_wire)
+         {
+            GL.Begin(PrimitiveType.Lines);
+            foreach (var sim in _simplexes)
+            foreach (var f in sim.Edjes)
+               Util.Vertex4(sim.Verts[f]);
 
-         GL.End();
+            GL.End();
+         }
 
          SwapBuffers();
       }
@@ -94,23 +116,27 @@ namespace Tetrahedrons
       {
          base.OnUpdateFrame(e);
 
-         _proj3d = Matrix4.CreateOrthographic(6, 6f * Height / Width, -4, 4);
+         var w = 10f;
+         var d = w;
+         _proj3d = Matrix4.CreateOrthographic(w, w * Height / Width, -d / 2, d / 2);
 
          if (_pause) return;
 
          _t += e.Time;
 
-         var pln = .5 * MVec4D.UnitXy + MVec4D.UnitZw;
+         var pln = MVec4D.UnitXy + MVec4D.UnitXz + MVec4D.UnitYw;
          var r = MVec4D.Rotor(e.Time / 10, pln.Normalized);
-         for (var i = 0; i < _pent.Verts.Length; i++)
-            _pent.Verts[i] |= r;
+         foreach (var pent in _simplexes)
+            for (var i = 0; i < pent.Verts.Length; i++)
+               pent.Verts[i] |= r;
 
          var blade = MVec4D.UnitXyz;
          var pivot = MVec4D.Zero;
 
-         pivot = .9 * Math.Sin(_t / 5) * MVec4D.UnitW;
-
-         _intr = _pent.Intersect(blade, pivot);
+         for (var i = 0; i < _simplexes.Length; i++)
+         {
+            _intersections[i] = _simplexes[i].Intersect(blade, pivot);
+         }
       }
 
       protected override void OnKeyDown(KeyboardKeyEventArgs e)
@@ -119,6 +145,9 @@ namespace Tetrahedrons
 
          if (e.Key == Key.Space)
             _pause = !_pause;
+
+         if (e.Key == Key.Comma)
+            _wire = !_wire;
       }
    }
 }
