@@ -988,7 +988,8 @@ namespace Tetrahedrons
 
       public static MVec4D Outer(double c, MVec4D n) => Mul(c, n);
 
-
+      public static MVec4D Transform(MVec4D m, MVec4D t) => Mul(Mul(t, m), t.Rev);
+      
       public static MVec4D? Add(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
       public static MVec4D? Add(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
       public static MVec4D? Add(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
@@ -1012,6 +1013,8 @@ namespace Tetrahedrons
       public static MVec4D? Outer(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
       public static MVec4D? Outer(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
       public static MVec4D? Outer(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
+
+      public static MVec4D? Transform(MVec4D? m, MVec4D? t) => Mul(Mul(t, m), t?.Rev);
 
       #endregion
 
@@ -1037,6 +1040,9 @@ namespace Tetrahedrons
       public static MVec4D operator ^(MVec4D m, double c) => Outer(m, c);
       public static MVec4D operator ^(double c, MVec4D n) => Outer(c, n);
 
+      public static MVec4D operator |(MVec4D m, MVec4D t) => Transform(m, t);
+      
+      
       public static MVec4D? operator +(MVec4D? m, MVec4D? n) => Add(m, n);
       public static MVec4D? operator +(double? c, MVec4D? n) => Add(c, n);
       public static MVec4D? operator +(MVec4D? m, double? c) => Add(m, c);
@@ -1057,7 +1063,9 @@ namespace Tetrahedrons
       public static MVec4D? operator ^(MVec4D? m, double? c) => Outer(m, c);
       public static MVec4D? operator ^(double? c, MVec4D? n) => Outer(c, n);
 
+      public static MVec4D? operator |(MVec4D? m, MVec4D? t) => Transform(m, t);
 
+      
       public static MVec4D operator -(MVec4D m) => m.Neg;
       public static MVec4D? operator ~(MVec4D m) => m.Inv;
       public static MVec4D operator !(MVec4D m) => m.Rev;

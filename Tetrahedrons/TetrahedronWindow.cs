@@ -27,6 +27,7 @@ namespace Tetrahedrons
       private Simplex _intr;
 
       private double _t;
+      private bool _pause;
 
       protected override void OnLoad(EventArgs e)
       {
@@ -62,42 +63,28 @@ namespace Tetrahedrons
          GL.MatrixMode(MatrixMode.Modelview);
          GL.LoadMatrix(ref _view);
 
-         GL.Begin(PrimitiveType.TriangleStrip);
-         GL.Color3(1d, 1, 1);
-         Util.Vertex3(-_a - _b);
-         Util.Vertex3(-_a + _b);
-         Util.Vertex3(_a - _b);
-         Util.Vertex3(_a + _b);
+         GL.Enable(EnableCap.DepthTest);
+
+         GL.Begin(PrimitiveType.Lines);
+         GL.Color3(0f, 0, 0);
+         foreach (var f in _intr.Edjes)
+            Util.Vertex3(_intr.Verts[f]);
          GL.End();
 
-         GL.Enable(EnableCap.DepthTest);
          GL.Begin(PrimitiveType.Triangles);
-         foreach (var f in _intr.Faces())
+         foreach (var f in _intr.Faces)
          {
             Util.Color3(_intr.Verts[f]);
             Util.Vertex3(_intr.Verts[f]);
          }
+
          GL.End();
          GL.Disable(EnableCap.DepthTest);
 
-         GL.Begin(PrimitiveType.Points);
-         foreach (var m in _pent.Verts)
-            Util.Vertex4(m);
-         GL.End();
-
          GL.Begin(PrimitiveType.Lines);
-         for (var i = 0; i < _pent.Verts.Length; i++)
-         for (var j = i + 1; j < _pent.Verts.Length; j++)
-         {
-            Util.Vertex4(_pent.Verts[i]);
-            Util.Vertex4(_pent.Verts[j]);
-         }
+         foreach (var f in _pent.Edjes)
+            Util.Vertex4(_pent.Verts[f]);
 
-         GL.End();
-
-         GL.Begin(PrimitiveType.Points);
-         foreach (var m in _intr.Verts)
-            Util.Vertex4(m);
          GL.End();
 
          SwapBuffers();
@@ -109,22 +96,29 @@ namespace Tetrahedrons
 
          _proj3d = Matrix4.CreateOrthographic(6, 6f * Height / Width, -4, 4);
 
+         if (_pause) return;
+
          _t += e.Time;
 
-         var pln = MVec4D.UnitXy + MVec4D.UnitZw;
-
+         var pln = .5 * MVec4D.UnitXy + MVec4D.UnitZw;
          var r = MVec4D.Rotor(e.Time / 10, pln.Normalized);
          for (var i = 0; i < _pent.Verts.Length; i++)
-         {
-            var m = _pent.Verts[i];
-            m = r * m * !r;
-            _pent.Verts[i] = m;
-         }
+            _pent.Verts[i] |= r;
 
          var blade = MVec4D.UnitXyz;
-//         var pivot = .5 * MVec4D.UnitW;
-         var pivot = 1.1 * Math.Sin(_t) * MVec4D.UnitW;
+         var pivot = MVec4D.Zero;
+
+         pivot = .9 * Math.Sin(_t / 5) * MVec4D.UnitW;
+
          _intr = _pent.Intersect(blade, pivot);
+      }
+
+      protected override void OnKeyDown(KeyboardKeyEventArgs e)
+      {
+         base.OnKeyDown(e);
+
+         if (e.Key == Key.Space)
+            _pause = !_pause;
       }
    }
 }
