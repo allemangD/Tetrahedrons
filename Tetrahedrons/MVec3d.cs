@@ -68,17 +68,7 @@ namespace Tetrahedrons
          return new MVec3D(0, 0, 0, 0, 0, 0, 0, e123);
       }
 
-      public static MVec3D Complex(double real, double imag)
-      {
-         return new MVec3D(real, 0, 0, 0, 0, 0, 0, imag);
-      }
-
-      public static MVec3D Complex(double w, double i, double j, double k)
-      {
-         return new MVec3D(w, 0, 0, 0, i, j, k, 0);
-      }
-
-      public static MVec3D Complex(double angle, MVec3D plane)
+      public static MVec3D Rotor(double angle, MVec3D plane)
       {
          return Math.Cos(angle) + Math.Sin(angle) * plane;
       }

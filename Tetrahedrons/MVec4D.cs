@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Dynamic;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using OpenTK;
+using OpenTK.Graphics.ES30;
 
 namespace Tetrahedrons
 {
@@ -38,7 +41,26 @@ namespace Tetrahedrons
                              Xyw * Xyw + Xzw * Xzw + Yzw * Yzw + Xyzw * Xyzw;
 
       public double Norm => Math.Sqrt(Norm2);
-      
+
+      public MVec4D Grade(int k)
+      {
+         switch (k)
+         {
+            case 0:
+               return Vec0(S);
+            case 1:
+               return Vec1(X, Y, Z, W);
+            case 2:
+               return Vec2(Xy, Xz, Xw, Yz, Yw, Zw);
+            case 3:
+               return Vec3(Xyz, Xyw, Xzw, Yzw);
+            case 4:
+               return Vec4(Xyzw);
+            default:
+               return Zero;
+         }
+      }
+
       #region Swizzle
 
       public double Yx
@@ -904,24 +926,151 @@ namespace Tetrahedrons
          );
       }
 
-      public static MVec4D? Div(MVec4D m, MVec4D n)
-      {
-         var inv = n.Inv;
-         if (!inv.HasValue)
-            return null;
-
-         return Mul(m, inv.Value);
-      }
+      public static MVec4D? Div(MVec4D m, MVec4D n) => Mul(m, n.Inv);
 
       public static MVec4D Div(MVec4D m, double c) => Mul(m, 1 / c);
 
-      public static MVec4D? Div(double c, MVec4D m)
+      public static MVec4D? Div(double c, MVec4D n) => Mul(c, n.Inv);
+
+      public static MVec4D Inner(MVec4D m, MVec4D n)
       {
-         var inv = m.Inv;
-         if (!inv.HasValue)
-            return null;
-         return Mul(c, inv.Value);
+         var m0 = m.Grade(0);
+         var m1 = m.Grade(1);
+         var m2 = m.Grade(2);
+         var m3 = m.Grade(3);
+         var m4 = m.Grade(4);
+
+         var n0 = n.Grade(0);
+         var n1 = n.Grade(1);
+         var n2 = n.Grade(2);
+         var n3 = n.Grade(3);
+         var n4 = n.Grade(4);
+
+         return new MVec4D(
+            m0 * n0 + m1 * n1 + m2 * n2 + m3 * n3 + n4 * n4,
+            m0 * n1 + m1 * n2 + m2 * n3 + m3 * n4,
+            m0 * n2 + m1 * n3 + m2 * n4,
+            m0 * n3 + m1 * n4,
+            m0 * n4
+         );
       }
+
+      public static MVec4D Inner(MVec4D m, double c) => Mul(m, c);
+
+      public static MVec4D Inner(double c, MVec4D n) => Mul(c, n);
+
+      public static MVec4D Outer(MVec4D m, MVec4D n)
+      {
+         var m0 = m.Grade(0);
+         var m1 = m.Grade(1);
+         var m2 = m.Grade(2);
+         var m3 = m.Grade(3);
+         var m4 = m.Grade(4);
+
+         var n0 = n.Grade(0);
+         var n1 = n.Grade(1);
+         var n2 = n.Grade(2);
+         var n3 = n.Grade(3);
+         var n4 = n.Grade(4);
+
+         return new MVec4D(
+            m0 * n0,
+            m1 * n0 + m0 * n1,
+            m2 * n0 + m1 * n1 + m0 * n2,
+            m3 * n0 + m2 * n1 + m1 * n2 + m0 * n3,
+            m4 * n0 + m3 * n1 + m2 * n2 + m1 * n3 + m0 * n4
+         );
+      }
+
+      public static MVec4D Outer(MVec4D m, double c) => Mul(m, c);
+
+      public static MVec4D Outer(double c, MVec4D n) => Mul(c, n);
+
+
+      public static MVec4D? Add(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
+      public static MVec4D? Add(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
+      public static MVec4D? Add(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Add(m.Value, n.Value) : null;
+
+      public static MVec4D? Sub(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Sub(m.Value, n.Value) : null;
+      public static MVec4D? Sub(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Sub(m.Value, n.Value) : null;
+      public static MVec4D? Sub(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Sub(m.Value, n.Value) : null;
+
+      public static MVec4D? Mul(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Mul(m.Value, n.Value) : null;
+      public static MVec4D? Mul(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Mul(m.Value, n.Value) : null;
+      public static MVec4D? Mul(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Mul(m.Value, n.Value) : null;
+
+      public static MVec4D? Div(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Div(m.Value, n.Value) : null;
+      public static MVec4D? Div(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Div(m.Value, n.Value) : null;
+      public static MVec4D? Div(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Div(m.Value, n.Value) : null;
+
+      public static MVec4D? Inner(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Inner(m.Value, n.Value) : null;
+      public static MVec4D? Inner(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Inner(m.Value, n.Value) : null;
+      public static MVec4D? Inner(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Inner(m.Value, n.Value) : null;
+
+      public static MVec4D? Outer(MVec4D? m, MVec4D? n) => m.HasValue && n.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
+      public static MVec4D? Outer(MVec4D? m, double? n) => m.HasValue && n.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
+      public static MVec4D? Outer(double? m, MVec4D? n) => n.HasValue && m.HasValue ? (MVec4D?) Outer(m.Value, n.Value) : null;
+
+      #endregion
+
+      #region Operators
+
+      public static MVec4D operator +(MVec4D m, MVec4D n) => Add(m, n);
+      public static MVec4D operator +(double c, MVec4D n) => Add(c, n);
+      public static MVec4D operator +(MVec4D m, double c) => Add(m, c);
+
+      public static MVec4D operator -(MVec4D m, MVec4D n) => Sub(m, n);
+      public static MVec4D operator -(double c, MVec4D n) => Sub(c, n);
+      public static MVec4D operator -(MVec4D m, double c) => Sub(m, c);
+
+      public static MVec4D operator *(MVec4D m, MVec4D n) => Mul(m, n);
+      public static MVec4D operator *(double c, MVec4D n) => Mul(c, n);
+      public static MVec4D operator *(MVec4D m, double c) => Mul(m, c);
+
+      public static MVec4D? operator /(MVec4D m, MVec4D n) => Div(m, n);
+      public static MVec4D? operator /(double c, MVec4D n) => Div(c, n);
+      public static MVec4D operator /(MVec4D m, double c) => Div(m, c);
+
+      public static MVec4D operator &(MVec4D m, MVec4D n) => Inner(m, n);
+      public static MVec4D operator &(MVec4D m, double c) => Inner(m, c);
+      public static MVec4D operator &(double c, MVec4D n) => Inner(c, n);
+
+      public static MVec4D operator ^(MVec4D m, MVec4D n) => Outer(m, n);
+      public static MVec4D operator ^(MVec4D m, double c) => Outer(m, c);
+      public static MVec4D operator ^(double c, MVec4D n) => Outer(c, n);
+
+      public static MVec4D? operator +(MVec4D? m, MVec4D? n) => Add(m, n);
+      public static MVec4D? operator +(double? c, MVec4D? n) => Add(c, n);
+      public static MVec4D? operator +(MVec4D? m, double? c) => Add(m, c);
+
+      public static MVec4D? operator -(MVec4D? m, MVec4D? n) => Sub(m, n);
+      public static MVec4D? operator -(double? c, MVec4D? n) => Sub(c, n);
+      public static MVec4D? operator -(MVec4D? m, double? c) => Sub(m, c);
+
+      public static MVec4D? operator *(MVec4D? m, MVec4D? n) => Mul(m, n);
+      public static MVec4D? operator *(double? c, MVec4D? n) => Mul(c, n);
+      public static MVec4D? operator *(MVec4D? m, double? c) => Mul(m, c);
+
+      public static MVec4D? operator /(MVec4D? m, MVec4D? n) => Div(m, n);
+      public static MVec4D? operator /(double? c, MVec4D? n) => Div(c, n);
+      public static MVec4D? operator /(MVec4D? m, double? c) => Div(m, c);
+
+      public static MVec4D? operator &(MVec4D? m, MVec4D? n) => Inner(m, n);
+      public static MVec4D? operator &(MVec4D? m, double? c) => Inner(m, c);
+      public static MVec4D? operator &(double? c, MVec4D? n) => Inner(c, n);
+
+      public static MVec4D? operator ^(MVec4D? m, MVec4D? n) => Outer(m, n);
+      public static MVec4D? operator ^(MVec4D? m, double? c) => Outer(m, c);
+      public static MVec4D? operator ^(double? c, MVec4D? n) => Outer(c, n);
+
+
+      public static MVec4D operator -(MVec4D m) => m.Neg;
+      public static MVec4D? operator ~(MVec4D m) => m.Inv;
+      public static MVec4D operator !(MVec4D m) => m.Rev;
+
+      public static implicit operator MVec4D(double v) => Vec0(v);
+      public static implicit operator MVec4D(Vector3d v) => Vec1(v.X, v.Y, v.Z, 0);
+      public static implicit operator MVec4D(Vector4d v) => Vec1(v.X, v.Y, v.Z, v.W);
 
       #endregion
 

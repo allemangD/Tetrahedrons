@@ -255,14 +255,14 @@ namespace Tetrahedrons
 
             if (Keyboard[Key.Left])
             {
-                var rot = MVec3D.Complex(-e.Time, MVec3D.Unit12);
+                var rot = MVec3D.Rotor(-e.Time, MVec3D.Unit12);
                 _b1 = rot * _b1 * ~rot; // todo make blade classes
                 _b2 = rot * _b2 * ~rot;
             }
 
             if (Keyboard[Key.Right])
             {
-                var rot = MVec3D.Complex(e.Time, MVec3D.Unit12);
+                var rot = MVec3D.Rotor(e.Time, MVec3D.Unit12);
                 _b1 = rot * _b1 * ~rot;
                 _b2 = rot * _b2 * ~rot;
             }
