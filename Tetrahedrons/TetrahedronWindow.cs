@@ -23,8 +23,8 @@ namespace Tetrahedrons
       private MVec4D _a = MVec4D.UnitX;
       private MVec4D _b = MVec4D.UnitY;
 
-      private Simplex[] _simplexes;
-      private Simplex[] _intersections;
+      private Simplex _sim;
+      private Simplex _int;
 
       private double _t;
       private bool _pause;
@@ -39,27 +39,13 @@ namespace Tetrahedrons
 
          _view = Matrix4.LookAt(Vector3.Zero, -new Vector3(.86f, .5f, 1), Vector3.UnitZ);
 
-         const int n = 5;
-         _simplexes = new Simplex[n * n * n * n];
-         _intersections = new Simplex[_simplexes.Length];
-
-         var off = (new Vector4d(n - 1, n - 1, n - 1, n - 1)) / 2;
-         int i = 0;
-         for (var x = 0; x < n; x++)
-         for (var y = 0; y < n; y++)
-         for (var z = 0; z < n; z++)
-         for (var w = 0; w < n; w++)
-         {
-            var d = new Vector4d(x, y, z, w);
-            _simplexes[i] = new Simplex( // not-quite-regular pentatope
-               new Vector4d(+.5, -.5, -.5, -.5) + d - off,
-               new Vector4d(-.5, +.5, -.5, -.5) + d - off,
-               new Vector4d(-.5, -.5, +.5, -.5) + d - off,
-               new Vector4d(-.5, -.5, -.5, +.5) + d - off,
-               new Vector4d(+.5, +.5, +.5, +.5) + d - off);
-            _intersections[i] = new Simplex();
-            i++;
-         }
+         _sim = new Simplex( // not-quite-regular pentatope
+            new Vector4d(+.5, -.5, -.5, -.5),
+            new Vector4d(-.5, +.5, -.5, -.5),
+            new Vector4d(-.5, -.5, +.5, -.5),
+            new Vector4d(-.5, -.5, -.5, +.5),
+            new Vector4d(+.5, +.5, +.5, +.5));
+         _int = new Simplex();
       }
 
       protected override void OnRenderFrame(FrameEventArgs e)
@@ -83,17 +69,15 @@ namespace Tetrahedrons
 
          GL.Begin(PrimitiveType.Lines);
          GL.Color3(0f, 0, 0);
-         foreach (var intr in _intersections)
-         foreach (var f in intr.Edjes)
-            Util.Vertex3(intr.Verts[f]);
+         foreach (var f in _int.Edjes)
+            Util.Vertex3(_int.Verts[f]);
          GL.End();
 
          GL.Begin(PrimitiveType.Triangles);
-         foreach (var intr in _intersections)
-         foreach (var f in intr.Faces)
+         foreach (var f in _int.Faces)
          {
-            Util.Color3(intr.Verts[f]);
-            Util.Vertex3(intr.Verts[f]);
+            Util.Color3(_int.Verts[f]);
+            Util.Vertex3(_int.Verts[f]);
          }
 
          GL.End();
@@ -102,9 +86,8 @@ namespace Tetrahedrons
          if (_wire)
          {
             GL.Begin(PrimitiveType.Lines);
-            foreach (var sim in _simplexes)
-            foreach (var f in sim.Edjes)
-               Util.Vertex4(sim.Verts[f]);
+            foreach (var f in _sim.Edjes)
+               Util.Vertex4(_sim.Verts[f]);
 
             GL.End();
          }
@@ -116,7 +99,7 @@ namespace Tetrahedrons
       {
          base.OnUpdateFrame(e);
 
-         var w = 10f;
+         var w = 2f;
          var d = w;
          _proj3d = Matrix4.CreateOrthographic(w, w * Height / Width, -d / 2, d / 2);
 
@@ -124,19 +107,15 @@ namespace Tetrahedrons
 
          _t += e.Time;
 
-         var pln = MVec4D.UnitXy + MVec4D.UnitXz + MVec4D.UnitYw;
-         var r = MVec4D.Rotor(e.Time / 10, pln.Normalized);
-         foreach (var pent in _simplexes)
-            for (var i = 0; i < pent.Verts.Length; i++)
-               pent.Verts[i] |= r;
-
+         var plane = MVec4D.UnitXw-2*MVec4D.UnitXy;
          var blade = MVec4D.UnitXyz;
-         var pivot = MVec4D.Zero;
+         var pivot = .1 * MVec4D.UnitW;
 
-         for (var i = 0; i < _simplexes.Length; i++)
-         {
-            _intersections[i] = _simplexes[i].Intersect(blade, pivot);
-         }
+         var r = MVec4D.Rotor(e.Time / 10, plane.Normalized);
+         for (var i = 0; i < _sim.Verts.Length; i++)
+            _sim.Verts[i] |= r;
+
+         _int = _sim.Intersect(blade, pivot);
       }
 
       protected override void OnKeyDown(KeyboardKeyEventArgs e)
