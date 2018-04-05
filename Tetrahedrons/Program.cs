@@ -3,7 +3,7 @@ using OpenTK;
 
 namespace Tetrahedrons
 {
-   internal class Program : GameWindow
+   public static class Program
    {
       public static void Main(string[] args)
       {

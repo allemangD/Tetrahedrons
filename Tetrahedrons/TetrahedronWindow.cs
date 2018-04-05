@@ -1,27 +1,14 @@
 ﻿﻿using System;
-using System.Diagnostics.PerformanceData;
-using System.Drawing;
-using System.Drawing.Printing;
-using System.Net;
-using System.Net.Mail;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security;
-using System.Xml.XPath;
-using OpenTK;
-using OpenTK.Audio.OpenAL;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Input;
-using OpenTK.Platform.Windows;
+ using OpenTK;
+ using OpenTK.Graphics.OpenGL;
+ using OpenTK.Input;
 
 namespace Tetrahedrons
 {
    public class TetrahedronWindow : GameWindow
    {
-      private Matrix4 _proj3d;
+      private Matrix4 _proj3D;
       private Matrix4 _view;
-
-      private MVec4D _a = MVec4D.UnitX;
-      private MVec4D _b = MVec4D.UnitY;
 
       private Simplex[] _simplexes;
       private Simplex[] _intersections;
@@ -39,12 +26,16 @@ namespace Tetrahedrons
 
          _view = Matrix4.LookAt(Vector3.Zero, -new Vector3(.86f, .5f, 1), Vector3.UnitZ);
 
-         const int n = 5;
+         
+         // build the pentatope lattice
+         var n = 5;
+         
          _simplexes = new Simplex[n * n * n * n];
          _intersections = new Simplex[_simplexes.Length];
 
          var off = (new Vector4d(n - 1, n - 1, n - 1, n - 1)) / 2;
-         int i = 0;
+         
+         var i = 0;
          for (var x = 0; x < n; x++)
          for (var y = 0; y < n; y++)
          for (var z = 0; z < n; z++)
@@ -75,33 +66,41 @@ namespace Tetrahedrons
          GL.PushMatrix();
 
          GL.MatrixMode(MatrixMode.Projection);
-         GL.LoadMatrix(ref _proj3d);
+         GL.LoadMatrix(ref _proj3D);
          GL.MatrixMode(MatrixMode.Modelview);
          GL.LoadMatrix(ref _view);
 
          GL.Enable(EnableCap.DepthTest);
 
          GL.Begin(PrimitiveType.Lines);
+         // render intersection wireframes
+         
          GL.Color3(0f, 0, 0);
          foreach (var intr in _intersections)
          foreach (var f in intr.Edjes)
             Util.Vertex3(intr.Verts[f]);
+         
          GL.End();
 
          GL.Begin(PrimitiveType.Triangles);
+         // render intersection faces
+         
          foreach (var intr in _intersections)
          foreach (var f in intr.Faces)
          {
             Util.Color3(intr.Verts[f]);
             Util.Vertex3(intr.Verts[f]);
          }
-
+         
          GL.End();
+         
          GL.Disable(EnableCap.DepthTest);
 
          if (_wire)
          {
             GL.Begin(PrimitiveType.Lines);
+            // render pentatope wireframes
+            
             foreach (var sim in _simplexes)
             foreach (var f in sim.Edjes)
                Util.Vertex4(sim.Verts[f]);
@@ -118,7 +117,7 @@ namespace Tetrahedrons
 
          var w = 10f;
          var d = w;
-         _proj3d = Matrix4.CreateOrthographic(w, w * Height / Width, -d / 2, d / 2);
+         _proj3D = Matrix4.CreateOrthographic(w, w * Height / Width, -d / 2, d / 2);
 
          if (_pause) return;
 
