@@ -7,8 +7,11 @@ namespace Tetrahedrons
    {
       public static void Main(string[] args)
       {
-         using (var p = new TetrahedronWindow())
+         using (var p = new Gl4Window())
             p.Run();
+         
+//         using (var p = new TetrahedronWindow())
+//            p.Run();
       }
    }
 }
