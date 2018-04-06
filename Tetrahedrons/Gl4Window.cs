@@ -186,7 +186,7 @@ namespace Tetrahedrons
 
          _transView.Projection = Matrix4.CreateOrthographic(w, w * Height / Width, -w, w);
          _transView.View = Matrix4.LookAt(Vector3.Zero, -new Vector3(1, -1, 1), Vector3.UnitZ);
-         _transView.Model = Matrix4.CreateRotationZ(_t / 10);
+         _transView.Model = Matrix4.CreateRotationZ(_t / 3);
 
          _bufTransView = GL.GenBuffer();
          GL.BindBuffer(BufferTarget.UniformBuffer, _bufTransView);
@@ -196,11 +196,13 @@ namespace Tetrahedrons
 
          _transPent.Pivot.W = .3f;
 //         _transPent.Pivot.W = (float) (Math.Sin(_t) * .6);
+         var a = 3f;
+         a = _t;
          _transPent.Rotate = new Matrix4(
             1, 0, 0, 0,
             0, 1, 0, 0,
-            0, 0, (float) Math.Sin(_t / 5), (float) -Math.Cos(_t / 5),
-            0, 0, (float) Math.Cos(_t / 5), (float) Math.Sin(_t / 5));
+            0, 0, (float) Math.Sin(a / 5), (float) -Math.Cos(a / 5),
+            0, 0, (float) Math.Cos(a / 5), (float) Math.Sin(a / 5));
 
          _bufTransPent = GL.GenBuffer();
          GL.BindBuffer(BufferTarget.ShaderStorageBuffer, _bufTransPent);

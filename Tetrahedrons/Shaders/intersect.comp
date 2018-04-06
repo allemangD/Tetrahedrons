@@ -66,21 +66,48 @@ void main() {
     
     if (vi == 4)  // points form a tetrahedron
     {
-//        for(int i =     0; i < 5; i++)
-//        for(int j = i + 1; j < 5; j++)
-//        for(int k = j + 1; j < 5; j++)
-//        {
-//            hullInds[hi0 + ii++] = i;
-//            hullInds[hi0 + ii++] = j;
-//            hullInds[hi0 + ii++] = k;
-//        }
+        for(int i =     0; i < 4; i++)
+        for(int j = i + 1; j < 4; j++)
+        for(int k = j + 1; k < 4; k++)
+        {
+            hullInds[hi0 + ii++] = i;
+            hullInds[hi0 + ii++] = j;
+            hullInds[hi0 + ii++] = k;
+        }
     }
     else if (vi == 6) {  // points form a triangular prism
-        for(int i = 0; i < 6; i++)
-        for(int j = i + 1; j < 6; j++)
-        for(int k = j + 1; k < 6; k++)
+        for(int f = 0; f < 5; f++)
         {
+            for(int i = 0; i < 6; i++)
+            for(int j = i + 1; j < 6; j++)
+            for(int k = j + 1; k < 6; k++)
+            if (
+                (hullInds[hi0 + 23 - 2 * i] == f ||
+                 hullInds[hi0 + 22 - 2 * i] == f) &&
+                (hullInds[hi0 + 23 - 2 * j] == f ||
+                 hullInds[hi0 + 22 - 2 * j] == f) &&
+                (hullInds[hi0 + 23 - 2 * k] == f ||
+                 hullInds[hi0 + 22 - 2 * k] == f))
+            {
+                hullInds[hi0 + ii++] = hv0 + i;
+                hullInds[hi0 + ii++] = hv0 + j;
+                hullInds[hi0 + ii++] = hv0 + k;
+            }
+        }
+        
+        for (int i = 0; i < 3; i++)
+        {
+            int a = hullInds[hi0 + i];
+            int b = hullInds[hi0 + (1 + i) % 3];
+            int c = hullInds[hi0 + 3 + i];
+            int d = hullInds[hi0 + 3 + (1 + i) % 3];
             
+            hullInds[hi0 + ii++] = c;
+            hullInds[hi0 + ii++] = a;
+            hullInds[hi0 + ii++] = b;
+            hullInds[hi0 + ii++] = b;
+            hullInds[hi0 + ii++] = d;
+            hullInds[hi0 + ii++] = c;
         }
     }
     
