@@ -1,24 +1,88 @@
-#version 430 compatibility
-#extension GL_ARB_compute_shader: enable
-#extension GL_ARB_shader_storage_buffer_object: enable
+#version 430
 
-layout(std140, binding=1) buffer bufIn
+layout(std430, binding=1) buffer PentVerts
 {
-    vec4 inVerts[];
+    vec4 pentVerts[];
 };
 
-layout(std140, binding=2) buffer bufOut
+layout(std430, binding=2) buffer PentInds
 {
-    vec4 outVerts[];
+    uint pentInds[];
+};
+
+layout(std430, binding=3) buffer HullVerts
+{
+    vec4 hullVerts[];
+};
+
+layout(std430, binding=4) buffer HullInds
+{
+    uint hullInds[];
+};
+
+layout(std430, binding=5) buffer Transform
+{
+    mat4 rotate;
+    vec4 pivot;
 };
 
 layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
-    uint n = gl_GlobalInvocationID.x;
+    uint pentInd0 = gl_GlobalInvocationID.x * 5;
+    uint hullVrt0 = gl_GlobalInvocationID.x * 6;
+    uint hullInd0 = gl_GlobalInvocationID.x * 24;
     
-    for(int i = 0; i < n; i++)
+    int k = 0;
+    for(int i = 0; i < 5; i++)
+    for(int j = i + 1; j < 5; j++)
     {
-        outVerts[i] = inVerts[i];
+        vec4 a = (pentVerts[pentInds[pentInd0 + i]] - pivot) * rotate; 
+        vec4 b = (pentVerts[pentInds[pentInd0 + j]] - pivot) * rotate;
+        
+        if (a.w * b.w < 0) // different sides
+        {
+            float alph = a.w / (a.w - b.w);
+            vec4 p = a + alph * (b - a);
+            hullVerts[hullVrt0 + k++] = p + pivot;
+        }
+    }
+    
+    for (int i = 0; i < 24; i++)
+        hullInds[hullInd0 + i] = 0;
+        
+    int v = 0;
+    
+    if (k == 4)
+    {
+        for(int i = 0; i < 4; i++)
+        for(int j = i + 1; j < 4; j++)
+        for(int k = j + 1; k < 4; k++)
+        {
+            hullInds[hullInd0 + v++] = hullVrt0 + i;
+            hullInds[hullInd0 + v++] = hullVrt0 + j;
+            hullInds[hullInd0 + v++] = hullVrt0 + k; 
+        }
+    }
+    else if (k == 6)
+    {
+        for (int i = 0; i < 6; i++)
+            hullInds[hullInd0 + v++] = hullVrt0 + i;
+            
+        for (int i = 0; i < 3; i++)
+        {
+            int a = i;
+            int b = (1 + i) % 3;
+            int c = 3 + i;
+            int d = 3 + (1 + i) % 3;
+            
+            hullInds[hullInd0 + v++] = hullVrt0 + c;
+            hullInds[hullInd0 + v++] = hullVrt0 + a;
+            hullInds[hullInd0 + v++] = hullVrt0 + b;
+            hullInds[hullInd0 + v++] = hullVrt0 + b;
+            hullInds[hullInd0 + v++] = hullVrt0 + d;
+            hullInds[hullInd0 + v++] = hullVrt0 + c;
+            
+        }
     }
 }

@@ -1,6 +1,6 @@
-in float w;
+in vec4 color;
 
 void main()
 {
-    gl_FragColor = vec4(w, 0, 1 - w, 1);
+    gl_FragColor = color;
 }

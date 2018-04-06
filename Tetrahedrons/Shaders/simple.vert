@@ -3,16 +3,16 @@
 layout(row_major) uniform Matrices
 {
     mat4 model;
-    mat4 proj;
     mat4 view;
+    mat4 proj;
 };
 
 in vec4 pos;
 
-out float w;
+out vec4 color;
 
 void main()
 {
     gl_Position = vec4(pos.xyz, 1) * model * view * proj;
-    w = (1 + pos.w) / 2;
+    color = vec4(gl_Position.xyz + vec3(.5), 1);
 }
