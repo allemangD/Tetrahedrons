@@ -9,9 +9,6 @@ namespace Tetrahedrons
       {
          using (var p = new Gl4Window())
             p.Run();
-         
-//         using (var p = new TetrahedronWindow())
-//            p.Run();
       }
    }
 }

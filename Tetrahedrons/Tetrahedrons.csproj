@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Gl4Window.cs" />
+    <Compile Include="BlockStructs.cs" />
     <Compile Include="MVec4D.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
