@@ -7,7 +7,7 @@ layout(std430, binding=1) buffer PentVerts
 
 layout(std430, binding=2) buffer PentInds
 {
-    uint pentInds[];
+    int pentInds[];
 };
 
 layout(std430, binding=3) buffer HullVerts
@@ -17,7 +17,7 @@ layout(std430, binding=3) buffer HullVerts
 
 layout(std430, binding=4) buffer HullInds
 {
-    uint hullInds[];
+    int hullInds[];
 };
 
 layout(std430, binding=5) buffer Transform
@@ -26,63 +26,68 @@ layout(std430, binding=5) buffer Transform
     vec4 pivot;
 };
 
-layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
-    uint pentInd0 = gl_GlobalInvocationID.x * 5;
-    uint hullVrt0 = gl_GlobalInvocationID.x * 6;
-    uint hullInd0 = gl_GlobalInvocationID.x * 24;
+    int iid = int(gl_GlobalInvocationID.x);
     
-    int k = 0;
+    int pi0 = iid * 5;
+    int hv0 = iid * 6;
+    int hi0 = iid * 24;
+    
+    // use range [19:] as lengths for sub arrays
+    // re-use hullInds as multidim array for faces
+    
+    for(int i = 0; i < 24; i++)
+        hullInds[hi0 + i] = 0;
+    
+    int vi = 0;  // vert index
+    int ii = 0;  // inds index
+
     for(int i = 0; i < 5; i++)
     for(int j = i + 1; j < 5; j++)
     {
-        vec4 a = (pentVerts[pentInds[pentInd0 + i]] - pivot) * rotate; 
-        vec4 b = (pentVerts[pentInds[pentInd0 + j]] - pivot) * rotate;
+        vec4 a = (pentVerts[pentInds[pi0 + i]] - pivot) * rotate; 
+        vec4 b = (pentVerts[pentInds[pi0 + j]] - pivot) * rotate;
         
         if (a.w * b.w < 0) // different sides
         {
             float alph = a.w / (a.w - b.w);
             vec4 p = a + alph * (b - a);
-            hullVerts[hullVrt0 + k++] = p + pivot;
+            
+            hullVerts[hv0 + vi] = p + pivot;
+            
+            hullInds[hi0 + 23 - 2 * vi] = i;
+            hullInds[hi0 + 22 - 2 * vi] = j;
+            
+            vi++;
         }
     }
     
-    for (int i = 0; i < 24; i++)
-        hullInds[hullInd0 + i] = 0;
+    if (vi == 4)  // points form a tetrahedron
+    {
+//        for(int i =     0; i < 5; i++)
+//        for(int j = i + 1; j < 5; j++)
+//        for(int k = j + 1; j < 5; j++)
+//        {
+//            hullInds[hi0 + ii++] = i;
+//            hullInds[hi0 + ii++] = j;
+//            hullInds[hi0 + ii++] = k;
+//        }
+    }
+    else if (vi == 6) {  // points form a triangular prism
+        for(int i = 0; i < 6; i++)
+        for(int j = i + 1; j < 6; j++)
+        for(int k = j + 1; k < 6; k++)
+        {
+            
+        }
+    }
+    
+    while (vi < 6)
+        hullVerts[hv0 + vi++] = vec4(0);
         
-    int v = 0;
-    
-    if (k == 4)
-    {
-        for(int i = 0; i < 4; i++)
-        for(int j = i + 1; j < 4; j++)
-        for(int k = j + 1; k < 4; k++)
-        {
-            hullInds[hullInd0 + v++] = hullVrt0 + i;
-            hullInds[hullInd0 + v++] = hullVrt0 + j;
-            hullInds[hullInd0 + v++] = hullVrt0 + k; 
-        }
-    }
-    else if (k == 6)
-    {
-        for (int i = 0; i < 6; i++)
-            hullInds[hullInd0 + v++] = hullVrt0 + i;
-            
-        for (int i = 0; i < 3; i++)
-        {
-            int a = i;
-            int b = (1 + i) % 3;
-            int c = 3 + i;
-            int d = 3 + (1 + i) % 3;
-            
-            hullInds[hullInd0 + v++] = hullVrt0 + c;
-            hullInds[hullInd0 + v++] = hullVrt0 + a;
-            hullInds[hullInd0 + v++] = hullVrt0 + b;
-            hullInds[hullInd0 + v++] = hullVrt0 + b;
-            hullInds[hullInd0 + v++] = hullVrt0 + d;
-            hullInds[hullInd0 + v++] = hullVrt0 + c;
-            
-        }
-    }
+    while (ii < 24)
+        hullInds[hi0 + ii++] = 0;
+        
 }

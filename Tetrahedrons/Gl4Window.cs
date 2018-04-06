@@ -158,15 +158,20 @@ namespace Tetrahedrons
          GL.MemoryBarrier(MemoryBarrierFlags.ShaderStorageBarrierBit);
 
          GL.UseProgram(_pgmRend);
+         GL.PointSize(10f);
          GL.BindBuffer(BufferTarget.ElementArrayBuffer, _bufHullInds);
          GL.BindBuffer(BufferTarget.ArrayBuffer, _bufHullVerts);
          GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, 0, 0);
          GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-         GL.Enable(EnableCap.DepthTest);
          GL.EnableVertexAttribArray(0);
+         
+         GL.Enable(EnableCap.DepthTest);
          GL.DrawElements(BeginMode.Triangles, _hullIndsCount, DrawElementsType.UnsignedInt, 0);
-         GL.DisableVertexAttribArray(0);
          GL.Disable(EnableCap.DepthTest);
+         
+         GL.DrawArrays(PrimitiveType.Points, 0, _hullVertsCount);
+         
+         GL.DisableVertexAttribArray(0);
 
          GL.Flush();
          SwapBuffers();
@@ -189,7 +194,8 @@ namespace Tetrahedrons
          GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _bufTransView);
          GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
-         _transPent.Pivot.W = (float) (Math.Sin(_t) * .6);
+         _transPent.Pivot.W = .3f;
+//         _transPent.Pivot.W = (float) (Math.Sin(_t) * .6);
          _transPent.Rotate = new Matrix4(
             1, 0, 0, 0,
             0, 1, 0, 0,
