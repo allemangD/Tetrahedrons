@@ -1,9 +1,6 @@
-#version 330
+in float w;
 
-out vec4 outputColor;
-
-void
-main()
+void main()
 {
-    outputColor = vec4(1);
+    gl_FragColor = vec4(w, 0, 1 - w, 1);
 }

@@ -55,6 +55,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\intersect.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Shaders\simple.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
