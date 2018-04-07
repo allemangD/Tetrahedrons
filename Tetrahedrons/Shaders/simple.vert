@@ -9,10 +9,10 @@ layout(row_major) uniform Matrices
 
 in vec4 pos;
 
-out vec4 color;
+out vec4 scol;
 
 void main()
 {
     gl_Position = vec4(pos.xyz, 1) * model * view * proj;
-    color = vec4(gl_Position.xyz + vec3(.5), 1);
+    scol = vec4(pos.xyz / 5 + .5, 1);
 }

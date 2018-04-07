@@ -1,8 +1,10 @@
 #version 430 compatibility
 
-in vec4 color;
+uniform vec4 color;
+
+in vec4 scol;
 
 void main()
 {
-    gl_FragColor = color;
+    gl_FragColor = color * scol;
 }
