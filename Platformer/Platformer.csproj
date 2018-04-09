@@ -52,6 +52,9 @@
     <Compile Include="Util\VertexArray.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="shaders\intersect.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="shaders\simple.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
