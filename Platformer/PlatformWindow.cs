@@ -112,7 +112,7 @@ namespace Platformer
          GL.BindVertexArray(_polyVao);
 
          GL.BindBuffer(BufferTarget.ElementArrayBuffer, _pEdges);
-         GL.Uniform3(_render.UnifLoc("color"), .1f, .1f, .9f);
+         GL.Uniform3(_render.UnifLoc("color"), .1f, .1f, .6f);
          GL.DrawElements(BeginMode.Lines, _pEdges.Count, DrawElementsType.UnsignedInt, 0);
 
          GL.Flush();
