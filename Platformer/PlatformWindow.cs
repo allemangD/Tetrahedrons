@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Common;
 using System.Drawing;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
@@ -22,6 +23,13 @@ namespace Platformer
       public static ViewMats Identity => new ViewMats {Model = Matrix4.Identity, View = Matrix4.Identity};
    }
 
+   public struct PlaneMats
+   {
+      public Matrix4 Tform;
+
+      public static PlaneMats Identity => new PlaneMats {Tform = Matrix4.Identity};
+   }
+
    public class PlatformWindow : GameWindow
    {
       private Program _render;
@@ -29,16 +37,22 @@ namespace Platformer
       private Buffer<Vector4> _tVerts;
       private Buffer<uint> _tFaces;
       private Buffer<uint> _tEdges;
-      private Buffer<ViewMats> _ubo;
+      private Buffer<ViewMats> _viewBuf;
+      private Buffer<PlaneMats> _tformBuf;
 
       private VertexArray _tetraVao;
 
       private ViewMats _view;
+      private PlaneMats _tform;
+
       private Buffer<uint> _tInds;
       private Buffer<Vector4> _pVerts;
+
       private Program _compute;
+
       private Buffer<uint> _pEdges;
       private Buffer<uint> _pAreas;
+
       private VertexArray _polyVao;
 
       protected override void OnLoad(EventArgs e)
@@ -75,11 +89,17 @@ namespace Platformer
          _pEdges = new Buffer<uint>(_tInds.Count / 4 * 8);
          _pAreas = new Buffer<uint>(_tInds.Count / 4 * 6);
 
-         _ubo = new Buffer<ViewMats>();
+         _viewBuf = new Buffer<ViewMats>();
          _view = ViewMats.Identity;
 
-         GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _ubo);
+         _tformBuf = new Buffer<PlaneMats>();
+         _tform = PlaneMats.Identity;
+
+         GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _viewBuf);
          GL.UniformBlockBinding(_render, _render.UnifBlockInd("ViewMats"), 0);
+
+         GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 1, _tformBuf);
+         GL.UniformBlockBinding(_compute, _compute.UnifBlockInd("PlaneMats"), 1);
 
          _tetraVao = new VertexArray();
          _tetraVao.VertexPointer(_tVerts, index: _render.AttrLoc("pos"), size: 4);
@@ -126,10 +146,10 @@ namespace Platformer
 
          _view.Proj = Matrix4.CreateOrthographic(5, 5f * Height / Width, -2.5f, 2.5f);
          _view.View = Matrix4.LookAt(Vector3.Zero, -Vector3.One, Vector3.UnitZ);
+         _tform.Tform = _view.Model *= Matrix4.CreateRotationZ((float) e.Time);
 
-         _view.Model *= Matrix4.CreateRotationZ((float) e.Time);
-
-         _ubo.SetData(ref _view);
+         _viewBuf.SetData(ref _view);
+         _tformBuf.SetData(ref _tform);
 
          GL.UseProgram(_compute);
          GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 0, _tVerts);
