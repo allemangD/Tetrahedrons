@@ -20,6 +20,21 @@ layout(std430, binding=3) buffer PolyEdges
     uint polyEdges[];
 };
 
+layout(std430, binding=4) buffer PolyFaces
+{
+    uint polyFaces[];
+};
+
+layout(std430, binding=5) buffer TetraEdges
+{
+    uint tetrEdges[];
+};
+
+layout(std430, binding=6) buffer TetraFaces
+{
+    uint tetrFaces[];
+};
+
 uniform PlaneMats
 {
     mat4 tform;
@@ -30,10 +45,20 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 void main () {
     int ti0 = int(gl_GlobalInvocationID.x * 4);
     int pv0 = int(gl_GlobalInvocationID.x * 4);
-    int pe0 = int(gl_GlobalInvocationID.x * 8);
     
-    int ii = 0;
-    int vv = 0;
+    int pe0 = int(gl_GlobalInvocationID.x * 8);
+    int pf0 = int(gl_GlobalInvocationID.x * 6);
+    
+    int te0 = int(gl_GlobalInvocationID.x * 12);
+    int tf0 = int(gl_GlobalInvocationID.x * 12);
+    
+    int pvi = 0;
+    
+    int pei = 0;
+    int pfi = 0;
+    
+    int tei = 0;
+    int tfi = 0;
     
     for (int i =     0; i < 4; i++)
     for (int j = i + 1; j < 4; j++)
@@ -47,16 +72,51 @@ void main () {
         if (a_.x * b_.x < 0)
         {
             vec4 p = (b-a) / (a_.x - b_.x) * b_.x + b;
-            polyVerts[pv0 + vv++] = p;
+            polyVerts[pv0 + pvi++] = p;
         }
     }
     
-    for (int i = 0; i < vv; i++)
+    polyEdges[pe0 + pei++] = pv0 + 0;
+    polyEdges[pe0 + pei++] = pv0 + 1;
+    polyEdges[pe0 + pei++] = pv0 + 1;
+    if (pvi == 4)
     {
-        polyEdges[pe0 + ii++] = pv0 + i;
-        polyEdges[pe0 + ii++] = pv0 + (i + 1) % vv;
+        polyEdges[pe0 + pei++] = pv0 + 3;
+        polyEdges[pe0 + pei++] = pv0 + 3;
+    }
+    polyEdges[pe0 + pei++] = pv0 + 2;
+    polyEdges[pe0 + pei++] = pv0 + 2;
+    polyEdges[pe0 + pei++] = pv0 + 0;
+    
+    polyFaces[pf0 + pfi++] = pv0 + 0;
+    polyFaces[pf0 + pfi++] = pv0 + 1;
+    polyFaces[pf0 + pfi++] = pv0 + 2;
+    if (pvi == 4)
+    {
+        polyFaces[pf0 + pfi++] = pv0 + 1;
+        polyFaces[pf0 + pfi++] = pv0 + 2;
+        polyFaces[pf0 + pfi++] = pv0 + 3;
     }
     
-    while (vv < 4) polyVerts[pv0 + vv++] = vec4(0);
-    while (ii < 8) polyEdges[pe0 + ii++] = 0;
+    for (int i = 0; i < 4; i++)
+    for (int j = i + 1; j < 4; j++)
+    for (int k = j + 1; k < 4; k++)
+    {
+        tetrFaces[tf0 + tfi++] = tetraInds[ti0 + i];
+        tetrFaces[tf0 + tfi++] = tetraInds[ti0 + j];
+        tetrFaces[tf0 + tfi++] = tetraInds[ti0 + k];
+    }
+    
+    for (int i = 0; i < 4; i++)
+    for (int j = i + 1; j < 4; j++)
+    {
+        tetrEdges[tf0 + tei++] = tetraInds[ti0 + i];
+        tetrEdges[tf0 + tei++] = tetraInds[ti0 + j];
+    }
+    
+    while (pvi < 4) polyVerts[pv0 + pvi++] = vec4(0);
+    while (pei < 8) polyEdges[pe0 + pei++] = 0;
+    while (pfi < 6) polyFaces[pf0 + pfi++] = 0;
+    while (tei < 8) polyEdges[te0 + tei++] = 0;
+    while (tfi < 6) polyFaces[tf0 + tfi++] = 0;
 }

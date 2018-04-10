@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Drawing;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using Platformer.Util;
 using BeginMode = OpenTK.Graphics.OpenGL4.BeginMode;
 using BufferRangeTarget = OpenTK.Graphics.OpenGL4.BufferRangeTarget;
@@ -32,28 +33,29 @@ namespace Platformer
 
    public class PlatformWindow : GameWindow
    {
-      private Program _render;
-
-      private Buffer<Vector4> _tVerts;
-      private Buffer<uint> _tFaces;
-      private Buffer<uint> _tEdges;
       private Buffer<ViewMats> _viewBuf;
       private Buffer<PlaneMats> _tformBuf;
-
-      private VertexArray _tetraVao;
-
       private ViewMats _view;
       private PlaneMats _tform;
 
-      private Buffer<uint> _tInds;
-      private Buffer<Vector4> _pVerts;
-
+      private Program _render;
       private Program _compute;
 
-      private Buffer<uint> _pEdges;
-      private Buffer<uint> _pAreas;
+      private Buffer<Vector4> _tVerts;
+      private Buffer<uint> _tInds;
 
+      private VertexArray _tetraVao;
       private VertexArray _polyVao;
+
+      private Buffer<Vector4> _pVerts;
+
+      private Buffer<uint> _pEdges;
+      private Buffer<uint> _pFaces;
+
+      private Buffer<uint> _tEdges;
+      private Buffer<uint> _tFaces;
+      private int _tetraCount;
+
 
       protected override void OnLoad(EventArgs e)
       {
@@ -69,25 +71,55 @@ namespace Platformer
          var comp = Shader.Compile("shaders/intersect.comp");
          _compute = Program.Link(comp);
 
-         _tFaces = Buffer<uint>.FromData(new uint[] {0, 1, 2, 0, 1, 3, 0, 2, 3, 1, 2, 3});
-         _tEdges = Buffer<uint>.FromData(new uint[] {0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3});
+//         _tVerts = Buffer<Vector4>.FromData(new[]
+//         {
+//            new Vector4(-.5f - 1, -.5f, -.5f, 1),
+//            new Vector4(+.5f - 1, +.5f, -.5f, 1),
+//            new Vector4(+.5f - 1, -.5f, +.5f, 1),
+//            new Vector4(-.5f - 1, +.5f, +.5f, 1),
+//
+//            new Vector4(-.5f + 1, -.5f, -.5f, 1),
+//            new Vector4(+.5f + 1, +.5f, -.5f, 1),
+//            new Vector4(+.5f + 1, -.5f, +.5f, 1),
+//            new Vector4(-.5f + 1, +.5f, +.5f, 1),
+//         });
+//
+//         _tInds = Buffer<uint>.FromData(new uint[]
+//         {
+//            0, 1, 2, 3,
+//            4, 5, 6, 7,
+//            0, 1, 6, 7,
+//         });
+
          _tVerts = Buffer<Vector4>.FromData(new[]
          {
-            new Vector4(-.5f - 1, -.5f, -.5f, 1),
-            new Vector4(+.5f - 1, +.5f, -.5f, 1),
-            new Vector4(+.5f - 1, -.5f, +.5f, 1),
-            new Vector4(-.5f - 1, +.5f, +.5f, 1),
-
-            new Vector4(-.5f + 1, -.5f, -.5f, 1),
-            new Vector4(+.5f + 1, +.5f, -.5f, 1),
-            new Vector4(+.5f + 1, -.5f, +.5f, 1),
-            new Vector4(-.5f + 1, +.5f, +.5f, 1),
+            new Vector4(-1, -1, -1, 1),
+            new Vector4(-1, -1, +1, 1),
+            new Vector4(-1, +1, -1, 1),
+            new Vector4(-1, +1, +1, 1),
+            new Vector4(+1, -1, -1, 1),
+            new Vector4(+1, -1, +1, 1),
+            new Vector4(+1, +1, -1, 1),
+            new Vector4(+1, +1, +1, 1),
          });
 
-         _tInds = Buffer<uint>.FromData(new uint[] {0, 1, 2, 3});
-         _pVerts = new Buffer<Vector4>(_tInds.Count / 4 * 4);
-         _pEdges = new Buffer<uint>(_tInds.Count / 4 * 8);
-         _pAreas = new Buffer<uint>(_tInds.Count / 4 * 6);
+         _tInds = Buffer<uint>.FromData(new uint[]
+         {
+            0, 3, 5, 6,
+            0, 3, 2, 6,
+            0, 3, 1, 5,
+            3, 7, 5, 6,
+            0, 4, 5, 6,
+         });
+
+         _tetraCount = _tInds.Count / 4;
+
+         _pVerts = new Buffer<Vector4>(_tetraCount * 4);
+         _pEdges = new Buffer<uint>(_tetraCount * 8);
+         _pFaces = new Buffer<uint>(_tetraCount * 6);
+
+         _tEdges = new Buffer<uint>(_tetraCount * 12);
+         _tFaces = new Buffer<uint>(_tetraCount * 12);
 
          _viewBuf = new Buffer<ViewMats>();
          _view = ViewMats.Identity;
@@ -119,21 +151,30 @@ namespace Platformer
          GL.UseProgram(_render);
 
          GL.BindVertexArray(_tetraVao);
-
-         GL.Enable(EnableCap.DepthTest);
-         GL.BindBuffer(BufferTarget.ElementArrayBuffer, _tEdges);
-         GL.Uniform3(_render.UnifLoc("color"), 0f, 0, 0);
-         GL.DrawElements(BeginMode.Lines, _tEdges.Count, DrawElementsType.UnsignedInt, 0);
+         GL.Disable(EnableCap.DepthTest);
          GL.BindBuffer(BufferTarget.ElementArrayBuffer, _tFaces);
          GL.Uniform3(_render.UnifLoc("color"), 1f, 1, 1);
          GL.DrawElements(BeginMode.Triangles, _tEdges.Count, DrawElementsType.UnsignedInt, 0);
-         GL.Disable(EnableCap.DepthTest);
 
          GL.BindVertexArray(_polyVao);
+         GL.Enable(EnableCap.DepthTest);
+         GL.BindBuffer(BufferTarget.ElementArrayBuffer, _pFaces);
+         GL.Uniform3(_render.UnifLoc("color"), .8f, .8f, .9f);
+         GL.DrawElements(BeginMode.Triangles, _pFaces.Count, DrawElementsType.UnsignedInt, 0);
 
+         GL.BindVertexArray(_polyVao);
+         GL.Disable(EnableCap.DepthTest);
+         GL.LineWidth(5f);
          GL.BindBuffer(BufferTarget.ElementArrayBuffer, _pEdges);
          GL.Uniform3(_render.UnifLoc("color"), .1f, .1f, .6f);
          GL.DrawElements(BeginMode.Lines, _pEdges.Count, DrawElementsType.UnsignedInt, 0);
+
+         GL.BindVertexArray(_tetraVao);
+         GL.Enable(EnableCap.DepthTest);
+         GL.LineWidth(2f);
+         GL.BindBuffer(BufferTarget.ElementArrayBuffer, _tEdges);
+         GL.Uniform3(_render.UnifLoc("color"), 0f, 0, 0);
+         GL.DrawElements(BeginMode.Lines, _tEdges.Count, DrawElementsType.UnsignedInt, 0);
 
          GL.Flush();
 
@@ -144,19 +185,36 @@ namespace Platformer
       {
          base.OnUpdateFrame(e);
 
+         var dv = Matrix4.Identity;
+
+         if (Keyboard[Key.A]) dv *= Matrix4.CreateRotationZ((float) e.Time);
+         if (Keyboard[Key.D]) dv *= Matrix4.CreateRotationZ(-(float) e.Time);
+
+         if (Keyboard[Key.W]) dv *= Matrix4.CreateRotationY((float) e.Time);
+         if (Keyboard[Key.S]) dv *= Matrix4.CreateRotationY(-(float) e.Time);
+
          _view.Proj = Matrix4.CreateOrthographic(5, 5f * Height / Width, -2.5f, 2.5f);
-         _view.View = Matrix4.LookAt(Vector3.Zero, -Vector3.One, Vector3.UnitZ);
-         _tform.Tform = _view.Model *= Matrix4.CreateRotationZ((float) e.Time);
+//         _view.View = Matrix4.LookAt(Vector3.Zero, -Vector3.One, Vector3.UnitZ);
+         _view.View = Matrix4.LookAt(Vector3.Zero, Vector3.UnitX, Vector3.UnitZ);
+//         _tform.Tform *= Matrix4.CreateRotationZ((float) e.Time) * Matrix4.CreateRotationX((float) e.Time / 1.7f);
+         _view.Model = _tform.Tform *= dv;
 
          _viewBuf.SetData(ref _view);
          _tformBuf.SetData(ref _tform);
 
          GL.UseProgram(_compute);
+
          GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 0, _tVerts);
          GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 1, _tInds);
+
          GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 2, _pVerts);
          GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 3, _pEdges);
-         GL.DispatchCompute(_tInds.Count / 4, 1, 1);
+         GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 4, _pFaces);
+
+         GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 5, _tEdges);
+         GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 6, _tFaces);
+
+         GL.DispatchCompute(_tetraCount, 1, 1);
       }
    }
 }
