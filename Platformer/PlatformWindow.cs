@@ -66,20 +66,19 @@ namespace Platformer
       private float _time;
 
 
-      private void GenSphere(int res)
+      private void GenSphere(uint res)
       {
-         var n = (uint) res;
          var tv = new List<Vector3>();
          var ns = new List<uint>();
 
          tv.Add(new Vector3(0, 0, 0));
 
-         var c = n + 1;
-         for (var p = 0; p <= n; p++)
-         for (var t = 0; t <= n; t++)
+         var c = res + 1;
+         for (var p = 0; p <= res; p++)
+         for (var t = 0; t <= res; t++)
          {
-            var pp = Math.PI * p / n;
-            var tt = Math.PI * 2 * t / n;
+            var pp = Math.PI * p / res;
+            var tt = Math.PI * 2 * t / res;
             tv.Add(new Vector3(
                (float) (Math.Sin(pp) * Math.Cos(tt)),
                (float) (Math.Sin(pp) * Math.Sin(tt)),
@@ -111,6 +110,57 @@ namespace Platformer
          _tCount = _tInds.Count / 4;
       }
 
+      private void GenTorus(uint res, double a, double b)
+      {
+         var tv = new List<Vector3>();
+         var ns = new List<uint>();
+
+         for (uint t = 0; t <= res; t++)
+         for (uint p = 0; p <= res; p++)
+         {
+            var tt = Math.PI * 2 * t / res;
+            var pp = Math.PI * 2 * p / res;
+
+            var v = new Vector3d(
+               (a - b * Math.Cos(pp)) * Math.Cos(tt),
+               (a - b * Math.Cos(pp)) * Math.Sin(tt),
+               b * Math.Sin(pp)
+            );
+
+            tv.Add((Vector3) v);
+         }
+
+         for (uint t = 0; t < res; t++)
+         for (uint p = 1; p < res; p++)
+         {
+            var k = res + 1;
+            
+            ns.Add(t * k);
+            ns.Add(t * k + p);
+            ns.Add(t * k + p + 1);
+            ns.Add(t * k + p + k);
+            
+            ns.Add(t * k);
+            ns.Add(t * k + p + 1);
+            ns.Add(t * k + p + k);
+            ns.Add(t * k + p + k + 1);
+            
+            ns.Add(t * k);
+            ns.Add(t * k + k);
+            ns.Add(t * k + p + k);
+            ns.Add(t * k + p + k + 1);
+         }
+
+         if (_tVerts == null)
+            _tVerts = new Buffer<Vector4>();
+         if (_tInds == null)
+            _tInds = new Buffer<uint>();
+
+         _tVerts.SetData(tv.Select(v => new Vector4(v, 1)).ToArray());
+         _tInds.SetData(ns.ToArray());
+         _tCount = _tInds.Count / 4;
+      }
+
 
       protected override void OnLoad(EventArgs e)
       {
@@ -126,7 +176,8 @@ namespace Platformer
          var comp = Shader.Compile("shaders/intersect.comp");
          _compute = Program.Link(comp);
 
-         GenSphere(20);
+//         GenSphere(20);
+         GenTorus(20, 1, .5);
 
          _pVerts = new Buffer<Vector4>(_tCount * 4);
          _pEdges = new Buffer<uint>(_tCount * 8);
@@ -188,7 +239,7 @@ namespace Platformer
             GL.DrawElements(BeginMode.Lines, _pEdges.Count, DrawElementsType.UnsignedInt, 0);
          }
 
-         if (_tOutline)
+         if (_tetra && _tOutline)
          {
             GL.BindVertexArray(_tetraVao);
             GL.Enable(EnableCap.DepthTest);
